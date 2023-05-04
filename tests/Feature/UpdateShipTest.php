@@ -1,0 +1,116 @@
+<?php
+
+namespace Tests\Feature;
+
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\WithFaker;
+use App\Models\TypeShip;
+use App\Models\Ship;
+use Tests\TestCase;
+use App\User;
+
+class UpdateShipTest extends TestCase
+{
+    // Trait refresh database agar migration dijalankan
+    use RefreshDatabase;
+
+    public function test_user_can_view_edit_ship()
+    {
+         // 1. generate 1 data pengguna dengan role admin   
+         $user = factory(User::class)->create([
+            'role' => 'admin',
+        ]);
+
+        // proses pembuatan data dummy jenis kapal
+        $typeShip = TypeShip::create([
+            'type' => 'Pengumpul',
+            'dtkn' => 'token'
+        ]);
+
+        // proses pembuatan data dummy kapal untuk di edit
+        $data = Ship::create([
+            'type_ship_id' => $typeShip->id,
+            'name' => 'Nama Kapal',
+            'owner' => 'Nama Pemilik',
+            'dtkn' => 'token'
+        ]);
+
+        // 2. sebuah akting bahwa pengguna telah melakukan login sebelumnya dan mengakses halaman ubah kapal
+        $response = $this->actingAs($user)->get(route('dashboard.ship.edit', $data->dtkn));
+        
+        // 3. pengguna berhasil mengakses halaman ubah kapal
+        $response->assertSuccessful();
+        $response->assertViewIs('dashboard.ship.edit');
+    }
+
+    public function test_user_cannot_view_edit_ship()
+    {
+         // 1. generate 1 data pengguna dengan role selain admin
+         $user = factory(User::class)->create([
+            'role' => 'enumerator',
+        ]);
+
+        // proses pembuatan data dummy jenis kapal
+        $typeShip = TypeShip::create([
+            'type' => 'Pengumpul',
+            'dtkn' => 'token'
+        ]);
+
+        // proses pembuatan data dummy kapal untuk di edit
+        $data = Ship::create([
+            'type_ship_id' => $typeShip->id,
+            'name' => 'Nama Kapal',
+            'owner' => 'Nama Pemilik',
+            'dtkn' => 'token'
+        ]);
+
+        // 2. sebuah akting bahwa pengguna telah melakukan login sebelumnya dan mengakses halaman ubah janis kapal
+        $response = $this->actingAs($user)->get(route('dashboard.ship.edit', $data->dtkn));
+        
+        // 3. kondisi dimana dilakukan pengecekkan role apakah pengguna seorang admin atau bukan
+        if($user->role == 'admin')
+        {
+            // 4. jika pengguna adalah seorang admin maka akan diarahkan ke halaman ubah user
+            $response->assertSuccessful();
+            $response->assertViewIs('dashboard.ship.edit');
+        } else {
+            // 5. jika pengguna bukan seorang admin maka pengguna akan melihat halaman 404
+            $response->assertSee('404');
+        }
+    }
+
+    public function test_user_can_update_data_type_ship()
+    {
+        // 1. generate 1 data pengguna dengan role admin
+        $user = factory(User::class)->create([
+            'role' => 'admin',
+        ]);
+
+        // proses pembuatan data dummy jenis kapal
+        $typeShip = TypeShip::create([
+            'type' => 'Pengumpul',
+            'dtkn' => 'token'
+        ]);
+
+        // proses pembuatan data dummy kapal untuk di edit
+        $data = Ship::create([
+            'type_ship_id' => $typeShip->id,
+            'name' => 'Nama Kapal',
+            'owner' => 'Nama Pemilik',
+            'dtkn' => 'token'
+        ]);
+
+        // 2. sebuah akting bahwa pengguna telah melakukan login sebelumnya dan mengakses halaman ubah janis kapal
+        $response = $this->actingAs($user)->get(route('dashboard.ship.edit', $data->dtkn));
+
+        // 3. proses mengubah data janis kapal
+        $data->update([
+            'name' => 'New Nama Kapal',
+            'owner' => 'New Nama Pemilik',
+        ]);
+
+        // 4. berhasil melakukan pengubahan data janis kapal
+        $response->assertSuccessful();
+    }
+    
+}
